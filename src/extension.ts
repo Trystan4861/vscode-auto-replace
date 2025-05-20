@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 
 export function activate(context: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration('autoReplace');
@@ -53,43 +53,58 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Comando para editar la configuración global de reemplazos
   context.subscriptions.push(vscode.commands.registerCommand('autoReplace.editGlobalReplacements', async () => {
-    try {
-      const settingsPath = getUserSettingsPath();
-      if (!fs.existsSync(settingsPath)) {
-        vscode.window.showErrorMessage('No se pudo encontrar el archivo settings.json global.');
-        return;
-      }
-
-      const doc = await vscode.workspace.openTextDocument(settingsPath);
-      const editor = await vscode.window.showTextDocument(doc);
-
-      // Buscar o insertar la configuración
-      const text = doc.getText();
-      if (!text.includes('"autoReplace.rules"')) {
-        const insertPos = new vscode.Position(doc.lineCount, 0);
-        const rulesSnippet = `\n  "autoReplace.enabled": true,\n  "autoReplace.rules": [\n    { "before": "...", "after": "…" },\n    { "before": "<3",  "after": "❤️" }\n  ]\n`;
-        await editor.edit(editBuilder => {
-          editBuilder.insert(insertPos, rulesSnippet);
-        });
-        await doc.save();
-      }
-
-      // Buscar la línea para enfocar el cursor
-      const lineNum = doc.getText().split('\n').findIndex(l => l.includes('"autoReplace.rules"'));
-      if (lineNum !== -1) {
-        const pos = new vscode.Position(lineNum, 0);
-        editor.selection = new vscode.Selection(pos, pos);
-        editor.revealRange(new vscode.Range(pos, pos));
-      }
-    } catch (err) {
-      vscode.window.showErrorMessage('Error abriendo el archivo global settings.json: ' + String(err));
-    }
+    await openGlobalReplacementRules();
   }));
 }
 
 export function deactivate() {}
 
-// Obtiene la ruta del settings.json global dependiendo del sistema operativo
+async function openGlobalReplacementRules() {
+  try {
+    const settingsPath = getUserSettingsPath();
+
+    // Leer el archivo settings.json global
+    let content = await fs.readFile(settingsPath, 'utf8');
+    let json: any = {};
+    try {
+      json = JSON.parse(content);
+    } catch {
+      // Si no es JSON válido, inicializar objeto vacío
+      json = {};
+    }
+
+    // Asegurar la estructura autoReplace
+    if (!json['autoReplace']) {
+      json['autoReplace'] = {};
+    }
+    json['autoReplace'].enabled = true;
+    if (!json['autoReplace'].rules) {
+      json['autoReplace'].rules = [
+        { before: '...', after: '…' },
+        { before: '<3', after: '❤️' }
+      ];
+    }
+
+    // Guardar JSON formateado de nuevo
+    await fs.writeFile(settingsPath, JSON.stringify(json, null, 2), 'utf8');
+
+    // Abrir el archivo en editor
+    const doc = await vscode.workspace.openTextDocument(settingsPath);
+    const editor = await vscode.window.showTextDocument(doc);
+
+    // Posicionar el cursor en la línea de "rules"
+    const lines = doc.getText().split('\n');
+    const lineNum = lines.findIndex(line => line.includes('"rules"'));
+    if (lineNum !== -1) {
+      const pos = new vscode.Position(lineNum, 0);
+      editor.selection = new vscode.Selection(pos, pos);
+      editor.revealRange(new vscode.Range(pos, pos));
+    }
+  } catch (err) {
+    vscode.window.showErrorMessage('Error accediendo a configuración global: ' + String(err));
+  }
+}
+
 function getUserSettingsPath(): string {
   const platform = process.platform;
   let basePath = '';
