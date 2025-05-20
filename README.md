@@ -93,4 +93,4 @@ Las contribuciones son bienvenidas. Si encuentras un error o tienes una sugerenc
 
 ## Licencia
 
-[MIT](LICENSE)
+[MIT](LICENSE.md)
