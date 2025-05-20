@@ -1,0 +1,72 @@
+{
+  "name": "auto-replace",
+  "displayName": "auto-replace",
+  "description": "Replace certain patterns as you type",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "autoReplace.enable",
+        "title": "Auto Replace: Activar en este proyecto"
+      },
+      {
+        "command": "autoReplace.disable",
+        "title": "Auto Replace: Desactivar en este proyecto"
+      },
+      {
+        "command": "autoReplace.editGlobalReplacements",
+        "title": "Auto Replace: Editar lista de reemplazos global"
+      }
+    ],
+    "configuration": {
+      "title": "Auto Replace",
+      "properties": {
+        "autoReplace.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Habilita el auto-reemplazo en este proyecto"
+        },
+        "autoReplace.rules": {
+          "type": "array",
+          "description": "Lista de reemplazos automáticos",
+          "default": [],
+          "items": {
+            "type": "object",
+            "properties": {
+              "before": { "type": "string" },
+              "after": { "type": "string" }
+            },
+            "required": ["before", "after"]
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.100.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
