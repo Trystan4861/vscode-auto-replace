@@ -16,11 +16,10 @@ export function activate(context: vscode.ExtensionContext) {
       const maxPatternLength = Math.max(...rules.map(rule => rule.before.length));
       // Usamos exactamente el tamaño del patrón más largo
       maxBufferSize = maxPatternLength;
-      console.log(`Buffer: max=${maxBufferSize} (patrón más largo)`);
+
     }
 
-    // Registrar las reglas para depuración (formato simplificado)
-    console.log('Reglas:', rules.map(r => `${r.before}->${r.after}`).join(', '));
+    // Reglas cargadas y listas para usar
 
     // Crear un mapa para almacenar el texto acumulado por documento
     const textBufferByDocument = new Map<string, string>();
@@ -31,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (editor) {
           const docKey = editor.document.uri.toString();
           textBufferByDocument.set(docKey, '');
-          console.log('Buffer limpiado: cambio de documento');
+
         }
       })
     );
@@ -46,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (editor.document.getText().length === 0) {
         const docKey = editor.document.uri.toString();
         textBufferByDocument.set(docKey, '');
-        console.log('Buffer limpiado: documento vacío');
+
       }
 
       const changes = event.contentChanges;
@@ -62,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
           (change.rangeLength > 10 || change.range.start.line !== change.range.end.line)) {
         const docKey = editor.document.uri.toString();
         textBufferByDocument.set(docKey, '');
-        console.log('Buffer limpiado: eliminación grande');
+
         return;
       }
 
@@ -91,8 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
       // Guardar el buffer actualizado
       textBufferByDocument.set(docKey, textBuffer);
 
-      // Log simplificado
-      console.log(`Texto: "${change.text}" | Buffer: "${textBuffer}" | Línea: "${lineText}"`);
+      // Procesamiento silencioso sin logs
 
       // Procesar cada regla
       for (const rule of rules) {
@@ -104,7 +102,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Si el patrón está justo antes del cursor en la línea actual
         if (isPatternAtCursor) {
-          console.log(`Patrón encontrado en línea: "${before}" → "${after}"`);
+
 
           // Calcular el rango a reemplazar
           const startPos = new vscode.Position(cursorPos.line, cursorPos.character - before.length);
@@ -116,7 +114,7 @@ export function activate(context: vscode.ExtensionContext) {
             editBuilder.replace(range, after);
           }).then(success => {
             if (success) {
-              console.log(`Reemplazo exitoso: "${before}" → "${after}"`);
+
 
               // Actualizar el buffer después del reemplazo
               if (textBuffer.endsWith(before)) {
@@ -136,7 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
         // Si el patrón no está en la línea pero está en el buffer o la línea actual es el patrón completo
         // O si el patrón está en la línea actual (para patrones subsiguientes)
         else if (textBuffer === before || lineText === before || lineText.includes(before)) {
-          console.log(`Patrón completo detectado: "${before}" → "${after}"`);
+
 
           // Reemplazar toda la línea actual si es igual al patrón
           if (lineText === before) {
@@ -144,7 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
             const endPos = new vscode.Position(cursorPos.line, lineText.length);
             const range = new vscode.Range(startPos, endPos);
 
-            console.log(`Reemplazo de línea completa: "${lineText}" → "${after}"`);
+
 
             // Realizar el reemplazo
             editor.edit(editBuilder => {
