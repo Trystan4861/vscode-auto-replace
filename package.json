@@ -1,7 +1,8 @@
 {
   "name": "auto-replace",
-  "displayName": "auto-replace",
-  "description": "Replace certain patterns as you type",
+  "displayName": "Auto Replace",
+  "description": "Extensión para Visual Studio Code que reemplaza automáticamente patrones de texto mientras escribes",
+  "icon": "media/icon.png",
   "version": "0.0.3",
   "engines": {
     "vscode": "^1.100.0"
@@ -48,6 +49,13 @@
         "title": "Auto Replace: Mostrar estado actual"
       }
     ],
+    "keybindings": [
+      {
+        "command": "autoReplace.handleEscapeKey",
+        "key": "escape",
+        "when": "editorTextFocus"
+      }
+    ],
     "configuration": {
       "title": "Auto Replace",
       "properties": {
@@ -61,6 +69,12 @@
           "type": "boolean",
           "default": false,
           "description": "Habilita el diccionario local de auto-reemplazo en este proyecto"
+        },
+        "autoReplace.requireEnterToReplace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Si está activado, se requiere pulsar Enter para aplicar el reemplazo en lugar de hacerlo automáticamente",
+          "scope": "application"
         },
         "autoReplace.rules": {
           "type": "array",

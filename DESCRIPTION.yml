@@ -1,0 +1,133 @@
+name: Auto Replace
+version: 0.0.3
+description: "Extensión para Visual Studio Code que reemplaza automáticamente patrones de texto mientras escribes"
+
+functionality:
+  core_features:
+    - "Reemplazo automático de patrones de texto predefinidos mientras escribes"
+    - "Soporte para diccionarios de reemplazo globales y locales por proyecto"
+    - "Visualización de sugerencias de reemplazo con decoraciones visuales en el editor"
+    - "Posibilidad de confirmar o cancelar reemplazos con Enter o Escape"
+    - "Configuración flexible a través de la interfaz de configuración de VS Code"
+
+  modes:
+    - name: "Reemplazo con confirmación"
+      description: "Requiere pulsar Enter para confirmar el reemplazo sugerido"
+
+  dictionaries:
+    - name: "Global"
+      description: "Reglas de reemplazo aplicadas en todos los proyectos"
+      storage: "Configuración global de VS Code"
+    - name: "Local"
+      description: "Reglas de reemplazo específicas para el proyecto actual"
+      storage: "Archivo .vscode/auto_replace_rules.json en el directorio del proyecto"
+
+ui_elements:
+  decorations:
+    - "Resaltado de texto con fondo azul claro y borde punteado"
+    - "Indicador visual de flecha (⮕) junto al texto a reemplazar y el texto sugerido"
+    - "Texto resaltado en negrita y color de fondo diferente al del editor"
+    - "Mensajes informativos en la barra de estado"
+
+commands:
+  info:
+    - "los comandos de autoReplace que comienzan con > se han de implementar públicamente para que el usuario pueda ejecutarlos desde la paleta de comandos"
+  activation:
+    - ">autoReplace.enableGlobalDict: Activa el diccionario global"
+    - ">autoReplace.disableGlobalDict: Desactiva el diccionario global"
+    - ">autoReplace.enableLocalDict: Activa el diccionario local para el proyecto actual"
+    - ">autoReplace.disableLocalDict: Desactiva el diccionario local para el proyecto actual"
+    - "autoReplace.toggleGlobal: Alterna el estado del diccionario global"
+    - "autoReplace.toggleLocal: Alterna el estado del diccionario local"
+
+  configuration:
+    - ">autoReplace.editGlobalReplacements: Abre el editor de reglas globales"
+    - ">autoReplace.editLocalReplacements: Abre el editor de reglas locales"
+
+
+  utility:
+    - ">autoReplace.showStatus: Muestra el estado actual de la extensión"
+    - "autoReplace.clearAllDecorations: Limpia todas las decoraciones activas"
+    - "autoReplace.handleEnterKey: Procesa la tecla Enter para confirmar reemplazos"
+    - "autoReplace.handleEscapeKey: Procesa la tecla Escape para cancelar reemplazos"
+
+configuration_options:
+  - name: "autoReplace.enabledGlobal"
+    type: "boolean"
+    default: "false"
+    description: "Habilita el diccionario global de auto-reemplazo"
+    scope: "application"
+
+  - name: "autoReplace.enabledLocal"
+    type: "boolean"
+    default: "false"
+    description: "Habilita el diccionario local de auto-reemplazo en este proyecto"
+    scope: "workspace"
+
+  - name: "autoReplace.requireEnterToReplace"
+    type: "boolean"
+    default: "true"
+    description: "por compatibilidad con versiones anteriores, se mantiene el nombre de la propiedad pero se debe tratar como si fuese una constante"
+    scope: "application"
+
+  - name: "autoReplace.rules"
+    type: "array"
+    description: "Lista global de reemplazos automáticos"
+    scope: "application"
+    format: "Array de objetos con propiedades 'before' y 'after'"
+
+  - name: "autoReplace.localRules"
+    type: "array"
+    description: "Lista local de reemplazos automáticos para este proyecto"
+    scope: "workspace"
+    format: "Array de objetos con propiedades 'before' y 'after'"
+
+technical_details:
+  implementation:
+    - "Monitoreo de cambios de texto en tiempo real mediante onDidChangeTextDocument"
+    - "Detección de patrones al final de la línea de texto actual"
+    - "Sistema de decoraciones visuales para resaltar texto reemplazable"
+    - "Gestión de timeouts para limpiar sugerencias no utilizadas"
+    - "Interceptación de teclas Enter y cualquier otra tecla para confirmar/cancelar reemplazos respectivamente"
+    - "Priorización de reglas locales sobre globales en caso de conflicto"
+
+  activation:
+    - "La extensión se activa al iniciar VS Code (onStartupFinished)"
+    - "El monitoreo de texto solo se inicia cuando al menos un diccionario está habilitado"
+    - "Las reglas se cargan dinámicamente al activar la extensión y al cambiar la configuración"
+
+use_cases:
+  - "Corrección automática de errores tipográficos comunes"
+  - "Inserción rápida de símbolos especiales (→, ←, ⇒, …, ❤️)"
+  - "Expansión de abreviaturas personalizadas"
+  - "Normalización de convenciones de código en un equipo"
+  - "Aceleración de la escritura de fragmentos de código repetitivos"
+
+examples:
+  common_replacements:
+    - { before: "...", after: "…" }
+    - { before: "<3", after: "❤️" }
+
+  code_snippets:
+    - { before: "cl", after: "console.log()" }
+    - { before: "imp", after: "import { } from '';" }
+    - { before: "fn", after: "function() {}" }
+
+  typo_corrections:
+    - { before: "teh", after: "the" }
+    - { before: "dont", after: "don't" }
+    - { before: "cant", after: "can't" }
+
+limitations:
+  - "No soporta expresiones regulares para patrones más complejos"
+  - "Solo debe detectar patrones justo en el texto antes de la posición del caret en todo momento"
+  - "El tiempo de espera para sugerencias está fijo en 3 segundos"
+  - "No permite personalizar los colores y estilos de las decoraciones"
+  - "No incluye sincronización de reglas entre dispositivos (depende de la sincronización de VS Code)"
+
+future_enhancements:
+  - "Soporte para expresiones regulares en patrones"
+  - "Personalización de estilos visuales para las decoraciones"
+  - "Tiempo de espera configurable para sugerencias"
+  - "Categorización de reglas por lenguaje de programación"
+  - "Importación/exportación de conjuntos de reglas"
