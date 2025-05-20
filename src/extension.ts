@@ -5,9 +5,35 @@ import * as fs from 'fs/promises';
 export function activate(context: vscode.ExtensionContext) {
   // Función para manejar los cambios de texto
   function createTextDocumentChangeHandler() {
-    // Obtener reglas de la configuración global del usuario
+    // Obtener configuraciones
     const globalConfig = vscode.workspace.getConfiguration('autoReplace', null);
-    const rules = globalConfig.get<{ before: string; after: string }[]>('rules', []);
+    const workspaceConfig = vscode.workspace.getConfiguration('autoReplace');
+
+    // Verificar estados de activación
+    const isGlobalDictEnabled = globalConfig.get<boolean>('enabledGlobal', false);
+    const isLocalDictEnabled = workspaceConfig.get<boolean>('enabledLocal', false);
+
+    // Obtener reglas según los estados de activación
+    const globalRules = isGlobalDictEnabled ? globalConfig.get<{ before: string; after: string }[]>('rules', []) : [];
+    const localRules = isLocalDictEnabled ? workspaceConfig.get<{ before: string; after: string }[]>('localRules', []) : [];
+
+    // Crear un mapa para combinar reglas, dando prioridad a las locales
+    const ruleMap = new Map<string, string>();
+
+    // Primero añadir reglas globales
+    globalRules.forEach(rule => {
+      ruleMap.set(rule.before, rule.after);
+    });
+
+    // Luego añadir reglas locales (sobrescribirán las globales si hay conflicto)
+    localRules.forEach(rule => {
+      ruleMap.set(rule.before, rule.after);
+    });
+
+    // Convertir el mapa de reglas de nuevo a un array
+    const rules = Array.from(ruleMap.entries()).map(([before, after]) => ({ before, after }));
+
+    console.log(`Auto Replace: Reglas cargadas - Global: ${globalRules.length}, Local: ${localRules.length}, Combinadas: ${rules.length}`);
 
     // Calcular el tamaño máximo del buffer basado en la regla más larga
     let maxBufferSize = 10; // Valor mínimo predeterminado
@@ -16,7 +42,6 @@ export function activate(context: vscode.ExtensionContext) {
       const maxPatternLength = Math.max(...rules.map(rule => rule.before.length));
       // Usamos exactamente el tamaño del patrón más largo
       maxBufferSize = maxPatternLength;
-
     }
 
     // Reglas cargadas y listas para usar
@@ -283,14 +308,16 @@ export function activate(context: vscode.ExtensionContext) {
     const workspaceConfig = vscode.workspace.getConfiguration('autoReplace');
     const globalConfig = vscode.workspace.getConfiguration('autoReplace', null);
 
-    // La extensión está habilitada si está activada en el workspace o globalmente
-    const isEnabledWorkspace = workspaceConfig.get<boolean>('enabled', false);
-    const isEnabledGlobal = globalConfig.get<boolean>('enabled', false);
-    const isEnabled = isEnabledWorkspace || isEnabledGlobal;
+    // Verificar estados de activación de los diccionarios
+    const isGlobalDictEnabled = globalConfig.get<boolean>('enabledGlobal', false);
+    const isLocalDictEnabled = workspaceConfig.get<boolean>('enabledLocal', false);
+
+    // La extensión está habilitada si al menos uno de los diccionarios está activado
+    const isEnabled = isGlobalDictEnabled || isLocalDictEnabled;
 
     console.log('Auto Replace: Estado de activación:', JSON.stringify({
-      workspace: isEnabledWorkspace,
-      global: isEnabledGlobal,
+      globalDict: isGlobalDictEnabled,
+      localDict: isLocalDictEnabled,
       final: isEnabled
     }));
 
@@ -324,32 +351,32 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Comando para activar la extensión en este proyecto
-  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.enable', async () => {
+  // Comando para activar el diccionario global
+  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.enableGlobalDict', async () => {
     const config = vscode.workspace.getConfiguration();
-    await config.update('autoReplace.enabled', true, vscode.ConfigurationTarget.Workspace);
-    vscode.window.showInformationMessage('Auto Replace ha sido activado en este proyecto.');
+    await config.update('autoReplace.enabledGlobal', true, vscode.ConfigurationTarget.Global);
+    vscode.window.showInformationMessage('Auto Replace: Diccionario global activado.');
   }));
 
-  // Comando para activar la extensión globalmente
-  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.enableGlobal', async () => {
+  // Comando para desactivar el diccionario global
+  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.disableGlobalDict', async () => {
     const config = vscode.workspace.getConfiguration();
-    await config.update('autoReplace.enabled', true, vscode.ConfigurationTarget.Global);
-    vscode.window.showInformationMessage('Auto Replace ha sido activado globalmente.');
+    await config.update('autoReplace.enabledGlobal', false, vscode.ConfigurationTarget.Global);
+    vscode.window.showInformationMessage('Auto Replace: Diccionario global desactivado.');
   }));
 
-  // Comando para desactivar la extensión en este proyecto
-  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.disable', async () => {
+  // Comando para activar el diccionario local en este proyecto
+  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.enableLocalDict', async () => {
     const config = vscode.workspace.getConfiguration();
-    await config.update('autoReplace.enabled', false, vscode.ConfigurationTarget.Workspace);
-    vscode.window.showInformationMessage('Auto Replace ha sido desactivado en este proyecto.');
+    await config.update('autoReplace.enabledLocal', true, vscode.ConfigurationTarget.Workspace);
+    vscode.window.showInformationMessage('Auto Replace: Diccionario local activado en este proyecto.');
   }));
 
-  // Comando para desactivar la extensión globalmente
-  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.disableGlobal', async () => {
+  // Comando para desactivar el diccionario local en este proyecto
+  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.disableLocalDict', async () => {
     const config = vscode.workspace.getConfiguration();
-    await config.update('autoReplace.enabled', false, vscode.ConfigurationTarget.Global);
-    vscode.window.showInformationMessage('Auto Replace ha sido desactivado globalmente.');
+    await config.update('autoReplace.enabledLocal', false, vscode.ConfigurationTarget.Workspace);
+    vscode.window.showInformationMessage('Auto Replace: Diccionario local desactivado en este proyecto.');
   }));
 
   // Comando para editar la configuración global de reemplazos
@@ -357,23 +384,63 @@ export function activate(context: vscode.ExtensionContext) {
     await openGlobalReplacementRules();
   }));
 
+  // Comando para editar la configuración local de reemplazos
+  context.subscriptions.push(vscode.commands.registerCommand('autoReplace.editLocalReplacements', async () => {
+    await openLocalReplacementRules();
+  }));
+
   // Comando para mostrar el estado actual de la extensión
   context.subscriptions.push(vscode.commands.registerCommand('autoReplace.showStatus', async () => {
     const workspaceConfig = vscode.workspace.getConfiguration('autoReplace');
     const globalConfig = vscode.workspace.getConfiguration('autoReplace', null);
 
-    const isEnabledWorkspace = workspaceConfig.get<boolean>('enabled', false);
-    const isEnabledGlobal = globalConfig.get<boolean>('enabled', false);
-    const rules = globalConfig.get<{ before: string; after: string }[]>('rules', []);
+    // Verificar estados de activación de los diccionarios
+    const isGlobalDictEnabled = globalConfig.get<boolean>('enabledGlobal', false);
+    const isLocalDictEnabled = workspaceConfig.get<boolean>('enabledLocal', false);
+
+    // Obtener reglas
+    const globalRules = globalConfig.get<{ before: string; after: string }[]>('rules', []);
+    const localRules = workspaceConfig.get<{ before: string; after: string }[]>('localRules', []);
+
+    // Crear un mapa para combinar reglas, dando prioridad a las locales
+    const ruleMap = new Map<string, string>();
+
+    // Añadir reglas según los estados de activación
+    if (isGlobalDictEnabled) {
+      globalRules.forEach(rule => {
+        ruleMap.set(rule.before, rule.after);
+      });
+    }
+
+    if (isLocalDictEnabled) {
+      localRules.forEach(rule => {
+        ruleMap.set(rule.before, rule.after);
+      });
+    }
+
+    // Convertir el mapa de reglas de nuevo a un array
+    const combinedRules = Array.from(ruleMap.entries()).map(([before, after]) => ({ before, after }));
 
     const status = {
-      activadoEnWorkspace: isEnabledWorkspace,
-      activadoGlobalmente: isEnabledGlobal,
-      activado: isEnabledWorkspace || isEnabledGlobal,
-      reglas: rules.map(r => `"${r.before}" → "${r.after}"`).join(', ')
+      diccionarioGlobal: {
+        activado: isGlobalDictEnabled,
+        reglas: globalRules.length
+      },
+      diccionarioLocal: {
+        activado: isLocalDictEnabled,
+        reglas: localRules.length
+      },
+      activado: isGlobalDictEnabled || isLocalDictEnabled,
+      reglasActivas: combinedRules.length,
+      detalleReglas: combinedRules.map(r => `"${r.before}" → "${r.after}"`).join(', ')
     };
 
-    vscode.window.showInformationMessage(`Auto Replace: ${status.activado ? 'Activado' : 'Desactivado'} (${rules.length} reglas)`);
+    vscode.window.showInformationMessage(
+      `Auto Replace: ${status.activado ? 'Activado' : 'Desactivado'} - ` +
+      `Global: ${status.diccionarioGlobal.activado ? 'Sí' : 'No'} (${status.diccionarioGlobal.reglas}), ` +
+      `Local: ${status.diccionarioLocal.activado ? 'Sí' : 'No'} (${status.diccionarioLocal.reglas}) - ` +
+      `Total: ${status.reglasActivas} reglas activas`
+    );
     console.log('Auto Replace: Estado actual:', JSON.stringify(status, null, 2));
   }));
 }
@@ -396,8 +463,8 @@ async function openGlobalReplacementRules() {
 
     // Asegurar que existen las configuraciones necesarias
     // Nota: Usamos la estructura plana para settings.json global
-    // Siempre activamos la extensión globalmente cuando se editan las reglas
-    json['autoReplace.enabled'] = true;
+    // Activamos el diccionario global cuando se editan las reglas
+    json['autoReplace.enabledGlobal'] = true;
 
     // Asegurarnos de que existan reglas predeterminadas
     if (!json['autoReplace.rules'] || !Array.isArray(json['autoReplace.rules']) || json['autoReplace.rules'].length === 0) {
@@ -412,7 +479,7 @@ async function openGlobalReplacementRules() {
 
     // Registrar para depuración
     console.log('Auto Replace: Configuración global guardada:', JSON.stringify({
-      enabled: json['autoReplace.enabled'],
+      enabledGlobal: json['autoReplace.enabledGlobal'],
       rules: json['autoReplace.rules']
     }));
 
@@ -433,6 +500,77 @@ async function openGlobalReplacementRules() {
     }
   } catch (err) {
     vscode.window.showErrorMessage('Error accediendo a configuración global: ' + String(err));
+  }
+}
+
+async function openLocalReplacementRules() {
+  try {
+    // Verificar si hay un workspace abierto
+    if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+      vscode.window.showErrorMessage('Auto Replace: No hay un proyecto abierto para editar reglas locales.');
+      return;
+    }
+
+    // Obtener la carpeta raíz del workspace
+    const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    const settingsDir = path.join(workspaceRoot, '.vscode');
+    const settingsPath = path.join(settingsDir, 'settings.json');
+
+    // Crear el directorio .vscode si no existe
+    try {
+      await fs.mkdir(settingsDir, { recursive: true });
+    } catch (err) {
+      // Ignorar error si el directorio ya existe
+    }
+
+    // Leer el archivo settings.json local o crear uno nuevo
+    let json: any = {};
+    try {
+      const content = await fs.readFile(settingsPath, 'utf8');
+      json = JSON.parse(content);
+    } catch (err) {
+      // Si el archivo no existe o no es JSON válido, inicializar objeto vacío
+      json = {};
+    }
+
+    // Activar el diccionario local
+    json['autoReplace.enabledLocal'] = true;
+
+    // Asegurarnos de que existan reglas predeterminadas
+    if (!json['autoReplace.localRules'] || !Array.isArray(json['autoReplace.localRules'])) {
+      json['autoReplace.localRules'] = [];
+    }
+
+    // Si no hay reglas, añadir algunas de ejemplo
+    if (json['autoReplace.localRules'].length === 0) {
+      json['autoReplace.localRules'] = [
+        { before: 'ejemplo', after: '¡Ejemplo local!' }
+      ];
+    }
+
+    // Registrar para depuración
+    console.log('Auto Replace: Configuración local guardada:', JSON.stringify({
+      enabledLocal: json['autoReplace.enabledLocal'],
+      localRules: json['autoReplace.localRules']
+    }));
+
+    // Guardar JSON formateado de nuevo
+    await fs.writeFile(settingsPath, JSON.stringify(json, null, 2), 'utf8');
+
+    // Abrir el archivo en editor
+    const doc = await vscode.workspace.openTextDocument(settingsPath);
+    const editor = await vscode.window.showTextDocument(doc);
+
+    // Posicionar el cursor en la línea de "autoReplace.localRules"
+    const lines = doc.getText().split('\n');
+    const lineNum = lines.findIndex(line => line.includes('"autoReplace.localRules"'));
+    if (lineNum !== -1) {
+      const pos = new vscode.Position(lineNum, 0);
+      editor.selection = new vscode.Selection(pos, pos);
+      editor.revealRange(new vscode.Range(pos, pos));
+    }
+  } catch (err) {
+    vscode.window.showErrorMessage('Error accediendo a configuración local: ' + String(err));
   }
 }
 

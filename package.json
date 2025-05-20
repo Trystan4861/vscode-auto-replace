@@ -20,24 +20,28 @@
   "contributes": {
     "commands": [
       {
-        "command": "autoReplace.enable",
-        "title": "Auto Replace: Activar en este proyecto"
+        "command": "autoReplace.enableGlobalDict",
+        "title": "Auto Replace: Activar diccionario global"
       },
       {
-        "command": "autoReplace.enableGlobal",
-        "title": "Auto Replace: Activar globalmente"
+        "command": "autoReplace.disableGlobalDict",
+        "title": "Auto Replace: Desactivar diccionario global"
       },
       {
-        "command": "autoReplace.disable",
-        "title": "Auto Replace: Desactivar en este proyecto"
+        "command": "autoReplace.enableLocalDict",
+        "title": "Auto Replace: Activar diccionario local en este proyecto"
       },
       {
-        "command": "autoReplace.disableGlobal",
-        "title": "Auto Replace: Desactivar globalmente"
+        "command": "autoReplace.disableLocalDict",
+        "title": "Auto Replace: Desactivar diccionario local en este proyecto"
       },
       {
         "command": "autoReplace.editGlobalReplacements",
         "title": "Auto Replace: Editar lista de reemplazos global"
+      },
+      {
+        "command": "autoReplace.editLocalReplacements",
+        "title": "Auto Replace: Editar lista de reemplazos local"
       },
       {
         "command": "autoReplace.showStatus",
@@ -47,16 +51,35 @@
     "configuration": {
       "title": "Auto Replace",
       "properties": {
-        "autoReplace.enabled": {
+        "autoReplace.enabledGlobal": {
           "type": "boolean",
           "default": false,
-          "description": "Habilita el auto-reemplazo en este proyecto"
+          "description": "Habilita el diccionario global de auto-reemplazo",
+          "scope": "application"
+        },
+        "autoReplace.enabledLocal": {
+          "type": "boolean",
+          "default": false,
+          "description": "Habilita el diccionario local de auto-reemplazo en este proyecto"
         },
         "autoReplace.rules": {
           "type": "array",
           "description": "Lista global de reemplazos automáticos",
           "default": [],
           "scope": "application",
+          "items": {
+            "type": "object",
+            "properties": {
+              "before": { "type": "string", "description": "Texto a reemplazar" },
+              "after": { "type": "string", "description": "Texto de reemplazo" }
+            },
+            "required": ["before", "after"]
+          }
+        },
+        "autoReplace.localRules": {
+          "type": "array",
+          "description": "Lista local de reemplazos automáticos para este proyecto",
+          "default": [],
           "items": {
             "type": "object",
             "properties": {
