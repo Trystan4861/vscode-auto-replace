@@ -6,6 +6,10 @@
   "engines": {
     "vscode": "^1.100.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trystan4861/vscode-auto-replace.git"
+  },
   "categories": [
     "Other"
   ],
