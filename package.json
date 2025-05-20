@@ -2,6 +2,7 @@
   "name": "auto-replace",
   "displayName": "Auto Replace",
   "description": "Extensión para Visual Studio Code que reemplaza automáticamente patrones de texto mientras escribes",
+  "icon": "media/icon.png",
   "version": "0.0.3",
   "engines": {
     "vscode": "^1.100.0"
