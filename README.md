@@ -29,26 +29,29 @@ Por defecto, la extensión está desactivada. Puedes activarla de dos formas:
    - Busca y selecciona `Auto Replace: Activar en este proyecto`
 
 2. **Globalmente**:
-   - Abre la configuración de VS Code (Archivo > Preferencias > Configuración)
+   - Abre la paleta de comandos (Ctrl+Shift+P)
+   - Busca y selecciona `Auto Replace: Activar globalmente`
+   - O abre la configuración de VS Code (Archivo > Preferencias > Configuración)
    - Busca "autoReplace.enabled"
    - Marca la casilla para activar
 
-Para desactivar, usa el comando `Auto Replace: Desactivar en este proyecto` o desmarca la opción en la configuración.
+Para desactivar, usa los comandos `Auto Replace: Desactivar en este proyecto` o `Auto Replace: Desactivar globalmente` según corresponda, o desmarca la opción en la configuración.
 
 ## Configuración
 
 ### Configurar reglas de reemplazo
 
-Puedes configurar tus propias reglas de reemplazo de dos maneras:
+Las reglas de reemplazo se configuran a nivel global y se aplican en todos los proyectos donde la extensión esté activada. Puedes configurar tus propias reglas de dos maneras:
 
 1. **Usando el comando**:
    - Abre la paleta de comandos (Ctrl+Shift+P)
    - Busca y selecciona `Auto Replace: Editar lista de reemplazos global`
-   - Se abrirá el archivo settings.json con la configuración de Auto Replace
+   - Se abrirá el archivo settings.json global con la configuración de Auto Replace
 
 2. **Manualmente**:
    - Abre la configuración de VS Code (Archivo > Preferencias > Configuración)
-   - Haz clic en "Editar en settings.json"
+   - Cambia a "Configuración de usuario" (no la del espacio de trabajo)
+   - Busca "autoReplace.rules" o haz clic en "Editar en settings.json"
    - Añade o modifica la configuración de `autoReplace.rules`
 
 ### Formato de las reglas

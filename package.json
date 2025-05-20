@@ -2,7 +2,7 @@
   "name": "auto-replace",
   "displayName": "auto-replace",
   "description": "Replace certain patterns as you type",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -13,7 +13,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["*"],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -22,12 +22,24 @@
         "title": "Auto Replace: Activar en este proyecto"
       },
       {
+        "command": "autoReplace.enableGlobal",
+        "title": "Auto Replace: Activar globalmente"
+      },
+      {
         "command": "autoReplace.disable",
         "title": "Auto Replace: Desactivar en este proyecto"
       },
       {
+        "command": "autoReplace.disableGlobal",
+        "title": "Auto Replace: Desactivar globalmente"
+      },
+      {
         "command": "autoReplace.editGlobalReplacements",
         "title": "Auto Replace: Editar lista de reemplazos global"
+      },
+      {
+        "command": "autoReplace.showStatus",
+        "title": "Auto Replace: Mostrar estado actual"
       }
     ],
     "configuration": {
@@ -40,13 +52,14 @@
         },
         "autoReplace.rules": {
           "type": "array",
-          "description": "Lista de reemplazos automáticos",
+          "description": "Lista global de reemplazos automáticos",
           "default": [],
+          "scope": "application",
           "items": {
             "type": "object",
             "properties": {
-              "before": { "type": "string" },
-              "after": { "type": "string" }
+              "before": { "type": "string", "description": "Texto a reemplazar" },
+              "after": { "type": "string", "description": "Texto de reemplazo" }
             },
             "required": ["before", "after"]
           }
